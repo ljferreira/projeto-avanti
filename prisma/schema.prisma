@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model avaliacao_emprestimo {
+  cod_avaliacao         Int                     @id @default(autoincrement())
+  fk_emprestimo_id      Int?
+  classif_livro         Int?
+  classif_usuario       Int?
+  comentario            String?
+  emprestimo            emprestimo?             @relation(fields: [fk_emprestimo_id], references: [id_emprestimo], onDelete: NoAction, onUpdate: NoAction)
+  classificacao_usuario classificacao_usuario[]
+}
+
+model classificacao_usuario {
+  fk_usuario_cpf       String               @db.Char(15)
+  fk_avaliacao_cod     Int
+  avaliacao_emprestimo avaliacao_emprestimo @relation(fields: [fk_avaliacao_cod], references: [cod_avaliacao], onDelete: NoAction, onUpdate: NoAction)
+  usuario              usuario              @relation(fields: [fk_usuario_cpf], references: [cpf], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([fk_usuario_cpf, fk_avaliacao_cod])
+}
+
+model emprestimo {
+  id_emprestimo           Int                    @id @default(autoincrement())
+  fk_usuario_cpf          String?                @db.Char(15)
+  fk_livro_codigo         Int?
+  data_emprestimo         DateTime               @default(dbgenerated("CURRENT_DATE")) @db.Date
+  data_prevista_devolucao DateTime?              @db.Date
+  data_devolucao          DateTime?              @db.Date
+  emprestimo_autorizado   Boolean?               @default(false)
+  emprestimo_solicitado   Boolean?               @default(true)
+  avaliacao_emprestimo    avaliacao_emprestimo[]
+  livro                   livro?                 @relation(fields: [fk_livro_codigo], references: [codigo], onDelete: NoAction, onUpdate: NoAction)
+  usuario                 usuario?               @relation(fields: [fk_usuario_cpf], references: [cpf], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model livro {
+  codigo          Int          @id @default(autoincrement())
+  fk_usuario_cpf  String?      @db.Char(15)
+  nome            String       @db.VarChar(100)
+  editora         String?      @db.VarChar(100)
+  data_publicacao DateTime?    @db.Date
+  num_edicao      Int?
+  autor_es        String?      @db.VarChar(100)
+  genero          String?      @db.VarChar(100)
+  disponivel      Boolean?     @default(true)
+  emprestimo      emprestimo[]
+  usuario         usuario?     @relation(fields: [fk_usuario_cpf], references: [cpf], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model usuario {
+  cpf                   String                  @id @db.Char(15)
+  email                 String                  @db.VarChar(100)
+  senha                 String                  @db.VarChar(255)
+  data_cadastro         DateTime                @default(dbgenerated("CURRENT_DATE")) @db.Date
+  nome                  String                  @db.VarChar(100)
+  rua                   String?                 @db.VarChar(100)
+  numero                Int?
+  bairro                String?                 @db.VarChar(100)
+  cidade                String?                 @db.VarChar(100)
+  estado                String?                 @db.Char(2)
+  cep                   String?                 @db.VarChar(10)
+  classificacao_usuario classificacao_usuario[]
+  emprestimo            emprestimo[]
+  livro                 livro[]
+}
